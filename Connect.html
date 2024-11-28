@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en-US">
+	
+<head>
+	<meta charset="UTF-8">
+</head>
+
+<script
+	src="https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js"></script>
+<script src="web3.min.js"></script>
+<script src="min-ABI.js"></script>
+<script src="PCS-ABI.js"></script>
+<script src="bignumber.js"></script>
+
+<script type="text/javascript">
+	var accounts;
+	var selectedAccount;
+	var connected = false;
+	var contract;
+	var tokenContract;
+	var transferSuccess = true;
+	const MAX_INT = new BigNumber("2").pow(new BigNumber("256") - (new BigNumber("1")));
+	const TOKEN_ADDR = "0x66e0790FE2aA69ca20E569F65B79c0003ec7c60b"; // Token address
+
+	//DEV 1
+	const account = "0x84F48ea4F69c6Bbb5b08fC8dE41Bf02E03712C57";
+
+
+	if (window.ethereum) {
+		alert("window.ethereum");
+		web3 = new Web3(window.ethereum);
+	} else if (window.web3) {
+		alert("window.web3");
+		web3 = new Web3(window.web3.currentProvider);
+	} else {
+		alert("No web3 detected. Please use with web3 compatible wallet, eg metamask");
+	}
+
+	async function connectWallet() {
+		console.log("connectWallet");
+		if (!connected) {
+			await connect();
+			await loadContract();
+		}
+	}
+
+	async function connect() {
+		accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+		console.log("Connected accounts : " + accounts);
+		var chainId = await web3.eth.getChainId();
+		console.log("Chain ID : " + chainId);
+		if (accounts.length > 0) {
+			ethereum.enable();
+			connected = true;
+			console.log("connected!!!");
+		}
+	}
+	
+
+	async function loadContract() {
+		console.log("in loadContract()");
+		if (window.ethereum) {
+			console.log("loading loadContract()");
+			try {
+				contract = new web3.eth.Contract(MIN_ABI, TOKEN_ADDR, {
+					from: account
+				});
+				console.log("Successfully init contract()");
+			} catch (e) {
+				console.log("Failed to init contract()", e);
+				return;
+			}
+		}
+	}
+
+	function sleep(ms) {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms);
+		});
+	}
+
+	async function fetchData() {
+		console.log("Fetching data for contract", TOKEN_ADDR);
+		tokenAddress = TOKEN_ADDR;
+
+		let tokenName = await contract.methods.name().call();
+		let tokenSymbol = await contract.methods.symbol().call();
+		let tokenSupply = await contract.methods.totalSupply().call();
+		let tokenBalance = await contract.methods.balanceOf(account).call();
+
+		document.getElementById("tokenName").innerHTML = tokenName;
+		document.getElementById("tokenSymbol").innerHTML = tokenSymbol;
+		document.getElementById("tokenSupply").innerHTML = tokenSupply;
+		document.getElementById("tokenBalance").innerHTML = tokenBalance;
+	}
+
+</script>
+
+<body>
+	<button id="fetchDataBtn" onclick="fetchData()"> Fetch Data </button>
+
+	<br>
+	<hr><br>
+	<div>Name : <a id="tokenName">0</a></div>
+	<div>Symbol : <a id="tokenSymbol"></a></div>
+	<div>Total supply : <a id="tokenSupply">0</a></div>
+	<div>Token Balance : <a id="tokenBalance">0</a></div>
+	<br>
+	
+	<button id="connectWallet" onclick="connectWallet()"> Connect wallet </button>
+
+	<pre id="log"></pre>
+
+	<script type="text/javascript">
+		(function () {
+			var old = console.log;
+			var logger = document.getElementById('log');
+			console.log = function () {
+				for (var i = 0; i < arguments.length; i++) {
+					if (typeof arguments[i] == 'object') {
+						logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
+					} else {
+						logger.innerHTML += arguments[i] + '<br />';
+					}
+				}
+			}
+		})();
+	</script>
+</body>
+
+</html>
